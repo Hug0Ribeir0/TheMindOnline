@@ -1,4 +1,5 @@
 import kotlin.random.Random
+import kotlinx.coroutines.sync.Mutex
 package nyx.software
 
 class Game constructor(){
@@ -7,34 +8,40 @@ class Game constructor(){
     val expectedResult : MutableList<Int> = mutableListOf()
     val playedCards : MutableList<Int> = mutableListOf()
     val level : Int = 1
+    private locker : Mutex = Mutex()
+    private isGameOn : Boolean = false
 
 
-
-
-
-    fun addPlayer(newPlayer: User): Boolean{
-        if(!players.contains(newPlayer)) {
+    fun addPlayer(newPlayer: User): Int{
+        if(players.contains(newPlayer))
+            reuturns 1
+        else if(isGameOn)
+            return 2
+        else if(!players.contains(newPlayer)) {
             players.add(newPlayer)
-            return true
-        }
-
-        return false
+            return 0
+        } 
+        return -1
     }
 
     fun removePlayer(oldPlayer: User): Boolean{
-        players.remove(oldPlayer)
+        if(!isGameOn)
+            players.remove(oldPlayer)
+        if(players.contains(oldPlayer) or isGameOn) 
+            return false
+
         return true
     }
 
-    fun levelUp(){
+    private fun levelUp(){
         level++
     }
 
-    fun levelDown(){
-        level--
+    private fun setLevel(setLevel:Int){
+        level=setLevel
     }
 
-    fun resetLevel(){
+    private fun resetLevel(){
         level = 1
     }
 
@@ -50,6 +57,7 @@ class Game constructor(){
                 deck.remove(randomIndex)
             }
         }
+        isGameOn = true
         expectedResult = expectedResult.sort()
         return 0
     }
@@ -69,9 +77,6 @@ class Game constructor(){
             println("U won")
             endGame(gameStatus)
         }
-
-
-
     }
 
     private fun checkPlay(){
@@ -83,13 +88,13 @@ class Game constructor(){
             return 2
 
         return 1
-
     }
 
     private fun endGame(status:Int){
         deck = (1..100).toMutableList()
         expectedResult = mutableListOf()
         playedCards = mutableListOf()
+        isGameOn = false
         if (status == 2)
             levelUp()
         else if (status == 0)
